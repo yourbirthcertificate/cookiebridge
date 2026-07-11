@@ -1,0 +1,24 @@
+{
+  "manifest_version": 3,
+  "name": "Local Cookie Bridge",
+  "version": "0.1.0",
+  "description": "One-shot, encrypted cookie migration between local Chromium browser profiles.",
+  "minimum_chrome_version": "130",
+  "incognito": "not_allowed",
+  "permissions": [
+    "cookies"
+  ],
+  "optional_host_permissions": [
+    "http://*/*",
+    "https://*/*"
+  ],
+  "action": {
+    "default_title": "Open Local Cookie Bridge"
+  },
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_security_policy": {
+    "extension_pages": "default-src 'self'; script-src 'self'; style-src 'self'; object-src 'none'; connect-src 'none'; img-src 'self' data:; media-src 'none'; frame-src 'none'; base-uri 'none'; form-action 'none'"
+  }
+}

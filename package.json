@@ -1,0 +1,11 @@
+{
+  "name": "local-cookie-bridge",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --test tests/bridge-core.test.mjs",
+    "validate": "node scripts/validate-extension.mjs",
+    "check": "npm run test && npm run validate"
+  }
+}

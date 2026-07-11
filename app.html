@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Local Cookie Bridge</title>
+    <link rel="icon" href="icon.svg" type="image/svg+xml">
+    <link rel="stylesheet" href="app.css">
+  </head>
+  <body>
+    <main class="shell">
+      <header class="hero">
+        <div>
+          <p class="eyebrow">LOCAL CHROMIUM MIGRATION</p>
+          <h1>Cookie Bridge</h1>
+          <p class="lede">Move ordinary browser cookies through a one-use encrypted bundle. Nothing is uploaded.</p>
+        </div>
+        <div class="local-badge" aria-label="Local-only design">
+          <span class="pulse"></span>
+          Local only
+        </div>
+      </header>
+
+      <section class="notice" aria-labelledby="security-heading">
+        <div class="notice-icon" aria-hidden="true">!</div>
+        <div>
+          <h2 id="security-heading">Treat the bundle like a temporary password vault</h2>
+          <p>It can contain active login tokens. Use it immediately, delete it afterwards, and remove this unpacked extension when the migration is complete.</p>
+        </div>
+      </section>
+
+      <div class="columns">
+        <section id="export-card" class="card" aria-labelledby="export-heading">
+          <div class="step-label">STEP 1 · SOURCE BROWSER</div>
+          <h2 id="export-heading">Export from Chrome</h2>
+          <p class="muted">Run this in the Chrome profile whose sessions you want to migrate.</p>
+
+          <fieldset>
+            <legend>Cookie scope</legend>
+            <label class="choice">
+              <input type="radio" name="export-scope" value="domains" checked>
+              <span>
+                <strong>Selected domains</strong>
+                <small>Includes matching subdomains and applicable parent-domain cookies.</small>
+              </span>
+            </label>
+            <label class="choice">
+              <input type="radio" name="export-scope" value="all">
+              <span>
+                <strong>Every accessible domain</strong>
+                <small>Exports the regular profile’s entire accessible cookie jar.</small>
+              </span>
+            </label>
+          </fieldset>
+
+          <label id="domain-field" class="field">
+            <span>Domains, one per line</span>
+            <textarea id="export-domains" rows="5" placeholder="github.com&#10;accounts.example.com"></textarea>
+          </label>
+
+          <label id="broad-confirmation" class="confirmation hidden">
+            <input id="confirm-broad" type="checkbox">
+            <span id="broad-warning-text">Confirm the exact cookie and domain count matched by this selected scope.</span>
+          </label>
+
+          <label id="all-confirmation" class="confirmation hidden">
+            <input id="confirm-all" type="checkbox">
+            <span>I understand that this bundle may grant access to every signed-in website in this profile.</span>
+          </label>
+
+          <div class="password-grid">
+            <label class="field">
+              <span>Bundle passphrase</span>
+              <input id="export-passphrase" type="password" autocomplete="new-password" minlength="12">
+            </label>
+            <label class="field">
+              <span>Confirm passphrase</span>
+              <input id="export-passphrase-confirm" type="password" autocomplete="new-password" minlength="12">
+            </label>
+          </div>
+          <div class="inline-actions">
+            <button id="generate-passphrase" class="button button-quiet" type="button">Generate strong passphrase</button>
+            <label class="show-secret"><input id="show-export-passphrase" type="checkbox"> Show</label>
+          </div>
+
+          <button id="export-button" class="button button-primary" type="button">Create encrypted bundle</button>
+          <progress id="export-progress" class="hidden" max="1" value="0"></progress>
+          <div id="export-status" class="status" role="status" aria-live="polite"></div>
+        </section>
+
+        <section id="import-card" class="card" aria-labelledby="import-heading">
+          <div class="step-label">STEP 2 · DESTINATION BROWSER</div>
+          <h2 id="import-heading">Import into Vivaldi</h2>
+          <p class="muted">Load the same extension folder in Vivaldi, then inspect the bundle before writing anything.</p>
+
+          <label class="field file-field">
+            <span>Encrypted bundle</span>
+            <input id="import-file" type="file" accept=".vcookies,application/json">
+          </label>
+          <label class="field">
+            <span>Bundle passphrase</span>
+            <input id="import-passphrase" type="password" autocomplete="current-password" minlength="12">
+          </label>
+          <label class="show-secret import-show"><input id="show-import-passphrase" type="checkbox"> Show passphrase</label>
+
+          <fieldset>
+            <legend>Existing Vivaldi cookies</legend>
+            <label class="choice">
+              <input type="radio" name="conflict-mode" value="preserve" checked>
+              <span><strong>Preserve</strong><small>Skip exact conflicts already in Vivaldi.</small></span>
+            </label>
+            <label class="choice">
+              <input type="radio" name="conflict-mode" value="overwrite">
+              <span><strong>Overwrite</strong><small>Replace exact conflicts with Chrome’s value.</small></span>
+            </label>
+          </fieldset>
+
+          <button id="inspect-button" class="button button-secondary" type="button">Decrypt and inspect</button>
+          <div id="inspection" class="inspection hidden" aria-live="polite"></div>
+          <button id="import-button" class="button button-danger" type="button" disabled>Import inspected cookies</button>
+          <progress id="import-progress" class="hidden" max="1" value="0"></progress>
+          <div id="import-status" class="status" role="status" aria-live="polite"></div>
+        </section>
+      </div>
+
+      <footer>
+        <p>Regular-profile cookies only. Device-bound sessions, passkeys, localStorage, IndexedDB, client certificates, and service-worker state are outside this bundle.</p>
+      </footer>
+    </main>
+    <script type="module" src="app.js"></script>
+  </body>
+</html>

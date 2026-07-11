@@ -1,0 +1,7 @@
+# Never commit real cookie exports — .vcookies bundles hold live session tokens.
+*.vcookies
+
+# Local secrets / environment
+.env
+.env.*
+!.env.example

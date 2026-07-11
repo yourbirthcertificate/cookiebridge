@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Local Cookie Bridge",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "description": "One-shot, encrypted cookie migration between local Chromium browser profiles.",
   "minimum_chrome_version": "130",
   "incognito": "not_allowed",

@@ -17,8 +17,39 @@ import {
 } from "./lib/bridge-core.js";
 
 const REQUIRED_ORIGINS = ["http://*/*", "https://*/*"];
+const THEME_STORAGE_KEY = "cookie-bridge-theme";
 let inspectedState = null;
 let operationActive = false;
+
+function initThemeToggle() {
+  const toggle = document.getElementById("theme-toggle");
+  const prefersDark = window.matchMedia("(prefers-color-scheme: dark)");
+
+  function storedTheme() {
+    const value = localStorage.getItem(THEME_STORAGE_KEY);
+    return value === "light" || value === "dark" ? value : null;
+  }
+
+  function effectiveTheme() {
+    return storedTheme() ?? (prefersDark.matches ? "dark" : "light");
+  }
+
+  function applyTheme(theme) {
+    document.documentElement.dataset.theme = theme;
+    toggle.textContent = theme === "dark" ? "light mode" : "dark mode";
+    toggle.setAttribute("aria-pressed", String(theme === "dark"));
+  }
+
+  toggle.addEventListener("click", () => {
+    const next = document.documentElement.dataset.theme === "dark" ? "light" : "dark";
+    localStorage.setItem(THEME_STORAGE_KEY, next);
+    applyTheme(next);
+  });
+  prefersDark.addEventListener("change", () => {
+    if (!storedTheme()) applyTheme(effectiveTheme());
+  });
+  applyTheme(effectiveTheme());
+}
 
 const elements = Object.fromEntries(
   [
@@ -602,3 +633,4 @@ window.addEventListener("beforeunload", () => {
   clearInspection();
 });
 toggleExportScope();
+initThemeToggle();

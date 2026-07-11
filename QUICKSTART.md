@@ -1,8 +1,9 @@
 # CookieBridge quick start
 
-CookieBridge moves ordinary login cookies between any two Chromium-based
-browsers (Chrome, Edge, Brave, Opera, Vivaldi, Arc, etc.) on the same
-computer. It does not upload anything.
+CookieBridge moves ordinary login cookies between two local Chromium-based
+browser profiles (Chrome, Edge, Brave, Opera, Vivaldi, Arc, etc.) on the same
+computer. It does not upload anything. Only Chrome → Vivaldi has been tested
+end to end; other browser pairs may work but are unverified.
 
 ## 1. Load the extension in both browsers
 

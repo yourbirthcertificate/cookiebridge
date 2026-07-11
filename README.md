@@ -4,6 +4,8 @@ Local Cookie Bridge is a one-shot, unpacked Manifest V3 extension for moving
 ordinary cookies from one local Chromium profile to another. Its intended use
 is a same-machine Chrome-to-Vivaldi migration.
 
+**Want the short version?** Follow the [CookieBridge quick start](QUICKSTART.md).
+
 The extension has no content scripts, remote code, analytics, telemetry, or
 network calls. It reads and writes cookies only after an explicit button click
 and a Chromium host-permission prompt. Exports are encrypted locally with

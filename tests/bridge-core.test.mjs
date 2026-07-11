@@ -4,6 +4,7 @@ import test from "node:test";
 
 import {
   analyzeImport,
+  clearCookieValues,
   compareCookieRecords,
   countMissingCookieIdentities,
   cookieIdentity,
@@ -16,6 +17,8 @@ import {
   markAmbiguousDuplicates,
   parseDomainList,
   sanitizeCookie,
+  setCookieWithConflictPolicy,
+  validatePayload,
 } from "../lib/bridge-core.js";
 
 const baseCookie = Object.freeze({
@@ -106,6 +109,23 @@ test("malformed cookie records are reported instead of aborting inspection", () 
   assert.equal(analysis.ready.length, 0);
 });
 
+test("payload validation rejects structurally unsafe cookie records", () => {
+  const payload = createPayload([baseCookie], { type: "domains", domains: ["example.com"] });
+  for (const record of [null, "bad-record", 7, false, []]) {
+    assert.throws(
+      () => validatePayload({ ...payload, cookies: [record] }),
+      /cookie record 1 is not an object/u,
+    );
+  }
+  assert.doesNotThrow(() => validatePayload({ ...payload, cookies: [{}] }));
+});
+
+test("cookie-value cleanup tolerates malformed records and clears valid records", () => {
+  const cookie = { ...baseCookie };
+  assert.doesNotThrow(() => clearCookieValues([cookie, null, "bad-record", []]));
+  assert.equal(cookie.value, "");
+});
+
 test("partitioned cookies are explicitly skipped when target API lacks support", () => {
   const partitioned = {
     ...baseCookie,
@@ -120,6 +140,118 @@ test("preserve mode skips exact conflicts while overwrite mode readies them", ()
   const existing = [{ ...baseCookie }];
   assert.equal(analyzeImport([baseCookie], existing, { conflictMode: "preserve" }).conflicts.length, 1);
   assert.equal(analyzeImport([baseCookie], existing, { conflictMode: "overwrite" }).ready.length, 1);
+});
+
+test("a destination cookie created after inspection prevents a preserve write", async () => {
+  const calls = [];
+  const outcome = await setCookieWithConflictPolicy(baseCookie, "preserve", {
+    getCurrentCookies: async () => {
+      calls.push("get");
+      return [{ ...baseCookie, value: "late-destination-value" }];
+    },
+    setCookie: async () => {
+      calls.push("set");
+      throw new Error("setCookie must not be called for a late conflict");
+    },
+  });
+  assert.deepEqual(outcome, { preserved: true });
+  assert.deepEqual(calls, ["get"]);
+});
+
+test("partition identity canonicalizes site casing without inventing an ancestor flag", () => {
+  const imported = {
+    ...baseCookie,
+    partitionKey: { topLevelSite: "https://EXAMPLE.COM" },
+  };
+  const existing = {
+    ...baseCookie,
+    partitionKey: { topLevelSite: "https://example.com" },
+  };
+  assert.equal(cookieIdentity(imported), cookieIdentity(existing));
+});
+
+test("sanitization preserves an omitted cross-site ancestor flag for Chrome to compute", () => {
+  const imported = {
+    ...baseCookie,
+    partitionKey: { topLevelSite: "https://different.test" },
+  };
+  const sanitized = sanitizeCookie(imported);
+  assert.equal("hasCrossSiteAncestor" in sanitized.partitionKey, false);
+  assert.equal("hasCrossSiteAncestor" in cookieToSetDetails(sanitized).partitionKey, false);
+});
+
+test("a partition-scoped recheck treats Chrome's canonical partition key as authoritative", async () => {
+  const imported = {
+    ...baseCookie,
+    partitionKey: { topLevelSite: "https://EXAMPLE.COM" },
+  };
+  const existing = {
+    ...baseCookie,
+    value: "late-destination-value",
+    partitionKey: { topLevelSite: "https://example.com", hasCrossSiteAncestor: false },
+  };
+  let setCalls = 0;
+  const outcome = await setCookieWithConflictPolicy(imported, "preserve", {
+    getCurrentCookies: async () => [existing],
+    setCookie: async () => {
+      setCalls += 1;
+      return imported;
+    },
+  });
+  assert.deepEqual(outcome, { preserved: true });
+  assert.equal(setCalls, 0);
+});
+
+test("preserve mode rechecks immediately before writing a non-conflict", async () => {
+  const calls = [];
+  const result = { ...baseCookie, value: "written-value" };
+  const outcome = await setCookieWithConflictPolicy(baseCookie, "preserve", {
+    getCurrentCookies: async () => {
+      calls.push("get");
+      return [{ ...baseCookie, path: "/different" }];
+    },
+    setCookie: async () => {
+      calls.push("set");
+      return result;
+    },
+  });
+  assert.deepEqual(outcome, { preserved: false, result });
+  assert.deepEqual(calls, ["get", "set"]);
+});
+
+test("preserve mode fails closed when the live recheck fails", async () => {
+  let setCalls = 0;
+  await assert.rejects(
+    setCookieWithConflictPolicy(baseCookie, "preserve", {
+      getCurrentCookies: async () => {
+        throw new Error("cookie lookup failed");
+      },
+      setCookie: async () => {
+        setCalls += 1;
+        return baseCookie;
+      },
+    }),
+    /cookie lookup failed/u,
+  );
+  assert.equal(setCalls, 0);
+});
+
+test("overwrite mode writes without a preserve recheck", async () => {
+  let getCalls = 0;
+  let setCalls = 0;
+  const outcome = await setCookieWithConflictPolicy(baseCookie, "overwrite", {
+    getCurrentCookies: async () => {
+      getCalls += 1;
+      return [baseCookie];
+    },
+    setCookie: async () => {
+      setCalls += 1;
+      return baseCookie;
+    },
+  });
+  assert.equal(outcome.preserved, false);
+  assert.equal(getCalls, 0);
+  assert.equal(setCalls, 1);
 });
 
 test("origin-bound duplicate identities in the target are skipped in every conflict mode", () => {

@@ -33,7 +33,9 @@ end to end; other browser pairs may work but are unverified.
 1. Open **Local Cookie Bridge** from your destination browser's extension menu.
 2. Select the `.vcookies` file and enter the same passphrase.
 3. Keep **Preserve** selected unless you deliberately want the source browser's
-   cookies to replace matching destination cookies.
+   cookies to replace matching destination cookies. Close destination-site tabs
+   during import; preserve mode rechecks each cookie, but Chromium cannot make
+   that recheck and write atomic.
 4. Choose **Decrypt and inspect**, approve the host-access prompt, and
    review the dry-run counts.
 5. Choose **Import inspected cookies**.

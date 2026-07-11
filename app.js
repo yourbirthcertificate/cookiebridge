@@ -1,6 +1,7 @@
 import {
   MAX_BUNDLE_BYTES,
   analyzeImport,
+  clearCookieValues,
   compareCookieRecords,
   countMissingCookieIdentities,
   cookieIdentity,
@@ -13,6 +14,7 @@ import {
   markAmbiguousDuplicates,
   parseDomainList,
   sanitizeCookie,
+  setCookieWithConflictPolicy,
   summarizeCookies,
 } from "./lib/bridge-core.js";
 
@@ -189,6 +191,19 @@ async function getAllCookiesIncludingPartitions() {
   }
 }
 
+async function getCurrentCookiesForIdentity(cookie) {
+  // Omitting partitionKey selects unpartitioned cookies; partitioned records use their exact key.
+  const details = {
+    domain: cookie.domain.replace(/^\./u, ""),
+    name: cookie.name,
+    path: cookie.path,
+  };
+  if (cookie.partitionKey?.topLevelSite) {
+    details.partitionKey = { ...cookie.partitionKey };
+  }
+  return chrome.cookies.getAll(details);
+}
+
 function generatePassphrase() {
   const bytes = crypto.getRandomValues(new Uint8Array(24));
   let binary = "";
@@ -354,10 +369,9 @@ async function handleExport() {
 }
 
 function clearInspection() {
-  if (inspectedState?.payload?.cookies) {
-    for (const cookie of inspectedState.payload.cookies) cookie.value = "";
-  }
+  const previousState = inspectedState;
   inspectedState = null;
+  clearCookieValues(previousState?.payload?.cookies);
   elements.inspection.replaceChildren();
   elements.inspection.classList.add("hidden");
   elements["import-button"].disabled = true;
@@ -396,11 +410,11 @@ function renderInspection(payload, analysis) {
 
 async function handleInspect() {
   if (!beginOperation(elements["import-status"])) return;
-  clearInspection();
-  const file = elements["import-file"].files?.[0];
-  const passphrase = elements["import-passphrase"].value;
   let releaseCrossTabLock = null;
   try {
+    clearInspection();
+    const file = elements["import-file"].files?.[0];
+    const passphrase = elements["import-passphrase"].value;
     if (!file) throw new Error("Select an encrypted .vcookies bundle.");
     if (file.size <= 0 || file.size > MAX_BUNDLE_BYTES) {
       throw new Error("The selected bundle is empty or exceeds the 50 MB safety limit.");
@@ -467,6 +481,7 @@ async function handleImport() {
   let writeCount = 0;
   let adjustedExpirations = 0;
   let destinationRemovals = 0;
+  let lateConflicts = 0;
   let releaseCrossTabLock = null;
   if (!beginOperation(elements["import-status"])) return;
   try {
@@ -496,7 +511,16 @@ async function handleImport() {
     for (let index = 0; index < ready.length; index += 1) {
       const cookie = ready[index];
       try {
-        const result = await chrome.cookies.set(cookieToSetDetails(cookie));
+        const outcome = await setCookieWithConflictPolicy(cookie, inspectedState.conflictMode, {
+          getCurrentCookies: getCurrentCookiesForIdentity,
+          setCookie: (candidate) => chrome.cookies.set(cookieToSetDetails(candidate)),
+        });
+        if (outcome.preserved) {
+          lateConflicts += 1;
+          elements["import-progress"].value = index + 1;
+          continue;
+        }
+        const result = outcome.result;
         if (!result) throw new Error("Browser returned no cookie after setting it.");
         writeCount += 1;
         const immediate = compareCookieRecords(cookie, result);
@@ -555,17 +579,20 @@ async function handleImport() {
     const removals = destinationRemovals > 0
       ? ` ${destinationRemovals.toLocaleString()} pre-existing destination cookie identities disappeared during import; site activity or quota eviction may be responsible.`
       : "";
+    const preservedLate = lateConflicts > 0
+      ? ` ${lateConflicts.toLocaleString()} destination conflicts were found by the pre-write preserve recheck and skipped.`
+      : "";
     if (failures.length === 0 && destinationRemovals === 0) {
       setStatus(
         elements["import-status"],
-        "success",
-        `Imported and verified ${verified.toLocaleString()} cookies.${adjusted} Reload destination tabs to test sessions.`,
+        lateConflicts > 0 ? "warning" : "success",
+        `Imported and verified ${verified.toLocaleString()} cookies.${preservedLate}${adjusted} Reload destination tabs to test sessions.`,
       );
     } else {
       setStatus(
         elements["import-status"],
         "warning",
-        `Verified ${verified.toLocaleString()} cookies; ${failures.length.toLocaleString()} failed verification. ${details}${adjusted}${removals}`,
+        `Verified ${verified.toLocaleString()} cookies; ${failures.length.toLocaleString()} failed verification. ${details}${preservedLate}${adjusted}${removals}`,
       );
     }
   } catch (error) {
@@ -579,10 +606,9 @@ async function handleImport() {
     elements["import-progress"].classList.add("hidden");
     setBusy(elements["import-button"], false, "", "Import inspected cookies");
     elements["import-passphrase"].value = "";
-    if (inspectedState?.payload?.cookies) {
-      for (const cookie of inspectedState.payload.cookies) cookie.value = "";
-    }
+    const completedState = inspectedState;
     inspectedState = null;
+    clearCookieValues(completedState?.payload?.cookies);
     endOperation();
   }
 }

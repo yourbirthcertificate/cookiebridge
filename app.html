@@ -105,13 +105,14 @@
           <legend>existing destination cookies</legend>
           <label class="choice">
             <input type="radio" name="conflict-mode" value="preserve" checked>
-            <span class="choice-text">Preserve <small>— skip exact conflicts already in the destination browser</small></span>
+            <span class="choice-text">Preserve <small>— best effort; recheck each cookie for exact conflicts immediately before writing</small></span>
           </label>
           <label class="choice">
             <input type="radio" name="conflict-mode" value="overwrite">
             <span class="choice-text">Overwrite <small>— replace exact conflicts with the source browser’s value</small></span>
           </label>
         </fieldset>
+        <p class="preserve-warning">Close destination-site tabs while importing. Chromium has no atomic cookie compare-and-set, so a site can still change a cookie between the preserve recheck and write.</p>
 
         <button id="inspect-button" class="button button-secondary" type="button">Decrypt and inspect</button>
         <div id="inspection" class="inspection hidden" aria-live="polite"></div>

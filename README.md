@@ -119,7 +119,10 @@ occurs after some writes, the UI reports the partial-write count explicitly.
 - The AES-GCM authentication tag makes tampering fail before import.
 - Import inspection is read-only. Cookie writes require a separate explicit
   click.
-- Existing destination cookies are preserved by default.
+- Existing destination cookies are preserved by default on a best-effort basis.
+  Preserve mode rechecks each exact identity immediately before writing, but
+  Chromium has no atomic cookie compare-and-set. Close destination-site tabs
+  during import to minimize the remaining recheck/write race.
 - Expired input is skipped before `cookies.set`; setting an expired cookie
   could otherwise delete its destination equivalent.
 - Decrypted values are held in page memory only and references are cleared

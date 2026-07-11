@@ -220,6 +220,13 @@ input[type="checkbox"] {
   color: var(--muted);
 }
 
+.preserve-warning {
+  margin: -6px 0 16px;
+  font-size: 11.5px;
+  line-height: 1.5;
+  color: var(--amber);
+}
+
 .field {
   display: block;
   margin-bottom: 14px;

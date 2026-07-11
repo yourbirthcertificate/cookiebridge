@@ -1,8 +1,12 @@
 # Local Cookie Bridge
 
 Local Cookie Bridge is a one-shot, unpacked Manifest V3 extension for moving
-ordinary cookies from one local Chromium profile to another. Its intended use
-is a same-machine Chrome-to-Vivaldi migration.
+ordinary cookies from one local Chromium profile to another. It is designed
+for recent desktop Chromium-based browsers — for example Chrome, Edge, Brave,
+Opera, Vivaldi, or Arc — but only the Chrome-to-Vivaldi path has been tested
+end to end. Unpacked MV3 support alone does not guarantee identical cookie
+and partition APIs across forks, so treat other source/destination pairs as
+unverified until you've confirmed them yourself.
 
 **Want the short version?** Follow the [CookieBridge quick start](QUICKSTART.md).
 
@@ -11,25 +15,33 @@ network calls. It reads and writes cookies only after an explicit button click
 and a Chromium host-permission prompt. Exports are encrypted locally with
 AES-256-GCM; the key is derived from a passphrase using PBKDF2-HMAC-SHA-256.
 
-## Install in Chrome and Vivaldi
+## Install in your source and destination browsers
+
+Any recent desktop Chromium-based browser should work on either side — for
+example Chrome, Edge, Brave, Opera, Vivaldi, or Arc — as long as it supports
+unpacked Manifest V3 extensions and its extensions page follows the usual
+`<scheme>://extensions` pattern (e.g. `chrome://extensions`,
+`edge://extensions`, `vivaldi://extensions`). Only Chrome → Vivaldi has been
+tested end to end; other pairs are unverified and may differ in their cookie
+or partition APIs.
 
 1. Keep this folder in a stable local location until migration is complete.
-2. In Chrome, open `chrome://extensions`, enable **Developer mode**, click
-   **Load unpacked**, and select this repository folder.
-3. In Vivaldi, open `vivaldi://extensions`, enable **Developer mode**, click
-   **Load unpacked**, and select the same folder.
+2. In your source browser, open its extensions page, enable **Developer
+   mode**, click **Load unpacked**, and select this repository folder.
+3. In your destination browser, open its extensions page, enable **Developer
+   mode**, click **Load unpacked**, and select the same folder.
 4. Pin **Local Cookie Bridge** temporarily in each browser if desired.
 
 ## Migrate
 
-1. Click the extension in the source Chrome profile.
+1. Click the extension in the source browser profile.
 2. Choose selected domains or explicitly confirm a full regular-profile export.
    Selected-domain mode shows its exact matched cookie/domain counts and requires
    a second confirmation, preventing accidental public-suffix-wide exports.
 3. Generate or enter a passphrase and create the `.vcookies` bundle.
-4. Click the extension in the destination Vivaldi profile.
+4. Click the extension in the destination browser profile.
 5. Select the bundle, enter the passphrase, and click **Decrypt and inspect**.
-6. Review the dry-run counts. Choose whether exact Vivaldi conflicts are
+6. Review the dry-run counts. Choose whether exact destination conflicts are
    preserved or overwritten.
 7. Import. The extension writes cookies sequentially and then takes a fresh
    cookie snapshot to verify the result.
@@ -37,8 +49,8 @@ AES-256-GCM; the key is derived from a passphrase using PBKDF2-HMAC-SHA-256.
 9. Delete the `.vcookies` file and remove the unpacked extension from both
    browsers.
 
-Run the process separately for each Chrome/Vivaldi browser profile. Incognito
-stores are intentionally excluded.
+Run the process separately for each source/destination browser profile.
+Incognito stores are intentionally excluded.
 
 ## What is preserved
 
@@ -65,8 +77,11 @@ TLS state, or device-bound session keys. Sites using Chrome Device-Bound
 Session Credentials can require a fresh login even when their cookie was
 successfully recreated.
 
-Chrome 148+ can bind cookies to their source scheme and, for host-only cookies,
-their source port. The extension cookie API does not expose those fields.
+Chrome 148+ can bind cookies to their source scheme and, for host-only
+cookies, their source port. Other Chromium-based browsers may adopt equivalent
+origin-binding behavior on different milestone schedules, so treat this as a
+Chrome-specific rollout until confirmed otherwise on a given fork. The
+extension cookie API does not expose those fields.
 Secure cookies therefore use their determinate HTTPS scheme and a default-port
 reconstruction; a non-default hidden source port remains an edge case.
 Non-Secure cookies use an HTTPS/default-port heuristic and are counted in the
@@ -114,8 +129,7 @@ valid session cookies can grant account access. Delete it promptly.
 
 No package installation is required.
 
-```powershell
-cd C:\Users\pierr\Documents\cookiebridge
+```
 npm run check
 ```
 

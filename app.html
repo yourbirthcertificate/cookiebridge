@@ -32,8 +32,8 @@
       <div class="columns">
         <section id="export-card" class="card" aria-labelledby="export-heading">
           <div class="step-label">STEP 1 · SOURCE BROWSER</div>
-          <h2 id="export-heading">Export from Chrome</h2>
-          <p class="muted">Run this in the Chrome profile whose sessions you want to migrate.</p>
+          <h2 id="export-heading">Export from your source browser</h2>
+          <p class="muted">Run this in the source browser profile whose sessions you want to migrate.</p>
 
           <fieldset>
             <legend>Cookie scope</legend>
@@ -90,8 +90,8 @@
 
         <section id="import-card" class="card" aria-labelledby="import-heading">
           <div class="step-label">STEP 2 · DESTINATION BROWSER</div>
-          <h2 id="import-heading">Import into Vivaldi</h2>
-          <p class="muted">Load the same extension folder in Vivaldi, then inspect the bundle before writing anything.</p>
+          <h2 id="import-heading">Import into your destination browser</h2>
+          <p class="muted">Load the same extension folder in the destination browser, then inspect the bundle before writing anything.</p>
 
           <label class="field file-field">
             <span>Encrypted bundle</span>
@@ -104,14 +104,14 @@
           <label class="show-secret import-show"><input id="show-import-passphrase" type="checkbox"> Show passphrase</label>
 
           <fieldset>
-            <legend>Existing Vivaldi cookies</legend>
+            <legend>Existing destination-browser cookies</legend>
             <label class="choice">
               <input type="radio" name="conflict-mode" value="preserve" checked>
-              <span><strong>Preserve</strong><small>Skip exact conflicts already in Vivaldi.</small></span>
+              <span><strong>Preserve</strong><small>Skip exact conflicts already in the destination browser.</small></span>
             </label>
             <label class="choice">
               <input type="radio" name="conflict-mode" value="overwrite">
-              <span><strong>Overwrite</strong><small>Replace exact conflicts with Chrome’s value.</small></span>
+              <span><strong>Overwrite</strong><small>Replace exact conflicts with the source browser’s value.</small></span>
             </label>
           </fieldset>
 

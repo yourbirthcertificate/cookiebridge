@@ -167,7 +167,7 @@ function generatePassphrase() {
 
 function filenameForNow() {
   const stamp = new Date().toISOString().replace(/[-:]/gu, "").replace(/T/u, "-").slice(0, 13);
-  return `chrome-cookie-bridge-${stamp}.vcookies`;
+  return `cookie-bridge-${stamp}.vcookies`;
 }
 
 function downloadText(serialized) {
@@ -258,7 +258,7 @@ async function handleExport() {
   let releaseCrossTabLock = null;
   try {
     inputs = validateExportInputs();
-    setBusy(elements["export-button"], true, "Reading Chrome cookies…", "Create encrypted bundle");
+    setBusy(elements["export-button"], true, "Reading cookies…", "Create encrypted bundle");
     elements["export-progress"].classList.remove("hidden");
     elements["export-progress"].removeAttribute("value");
     await ensureHostAccess();

@@ -8,6 +8,9 @@ end to end. Unpacked MV3 support alone does not guarantee identical cookie
 and partition APIs across forks, so treat other source/destination pairs as
 unverified until you've confirmed them yourself.
 
+Built with [Claude Code](https://www.anthropic.com/claude-code) and
+[OpenAI Codex](https://openai.com/codex/).
+
 **Want the short version?** Follow the [CookieBridge quick start](QUICKSTART.md).
 
 The extension has no content scripts, remote code, analytics, telemetry, or
